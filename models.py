@@ -2,6 +2,8 @@ import datetime
 
 from peewee import *
 
+import config
+
 DATABASE = SqliteDatabase('courses.sqlite')
 
 class Course(Model):
