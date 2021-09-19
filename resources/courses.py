@@ -4,6 +4,7 @@ from flask.ext.restful import (Resource, Api, reqparse,
                                inputs, fields, marshal,
                                marshal_with, url_for)
 
+from auth import auth
 import models
 
 course_fields = {
@@ -55,7 +56,10 @@ class CourseList(Resource):
   def post(self):
     args = self.reqparse.parse_args()
     course = models.Course.create(**args)
-    return add_reviews(course)
+    @auth.login_required
+        return (add_reviews(course), 201, {
+                'Location': url_for('resources.courses.course', id=course.id)}
+               )
 
 
 class Course(Resource):
@@ -81,6 +85,7 @@ class Course(Resource):
       return add_reviews(course_or_404(id))
     
     @marshal_with(course_fields)
+    @auth.login_required
     def put(self, id):
         args = self.reqparse.parse_args()
         query = models.Course.update(**args).where(models.Course.id==id)
@@ -88,10 +93,11 @@ class Course(Resource):
         return (add_reviews(models.Course.get(models.Course.id==id)), 200,
                 {'Location': url_for('resources.courses.course', id=id)})
     
+    @auth.login_required
     def delete(self, id):
         query = models.Course.delete().where(models.Course.id==id)
         query.execute()
-        return '', 200, {'Location': url_for('resources.courses.course')}
+        return '', 204, {'Location': url_for('resources.courses.courses')}
 
 courses_api = Blueprint('resources.courses', __name__)
 api = Api(courses_api)
